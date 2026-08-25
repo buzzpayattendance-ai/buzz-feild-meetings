@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#191E29">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Buzz Field Meetings</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--navy:#191E29;--blue:#132D46;--aqua:#2CFFCC;--green:#31C195;--white:#fff;--muted:#9da7b4;--card:#202735;--line:#344052}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(145deg,var(--navy),var(--blue));color:#fff;font-family:Arial,sans-serif;min-height:100vh}
+.app{max-width:720px;margin:auto;padding:18px 14px 90px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.brand{font-weight:900;font-size:20px;letter-spacing:.2px}.brand span,.logo span{color:var(--aqua)}
+button{border:0;border-radius:12px;padding:12px 15px;font-weight:800;cursor:pointer}
+.primary{background:var(--aqua);color:#10201e}.secondary{background:var(--card);color:#fff;border:1px solid var(--line)}
+.card{background:rgba(32,39,55,.94);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+h1{font-size:25px;margin:8px 0 12px}.muted{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}
+label{display:block;font-size:12px;color:#cbd2db;font-weight:800;margin-bottom:6px}
+input,textarea,select{width:100%;background:#151b25;color:#fff;border:1px solid var(--line);border-radius:11px;padding:12px;font:inherit;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--aqua)}
+textarea{min-height:105px;resize:vertical}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meeting{cursor:pointer}.meeting h3{margin:0 0 6px;font-size:17px}
+.pill{display:inline-block;padding:5px 8px;border-radius:20px;background:rgba(44,255,204,.12);color:var(--aqua);font-size:11px;font-weight:800;margin-right:5px}
+.hidden{display:none}.error{color:#ff9b9b;font-size:13px}.success{color:var(--aqua);font-size:13px}
+.empty{text-align:center;padding:28px;color:var(--muted)}
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login .card{width:100%;max-width:420px}.logo{font-size:28px;font-weight:900}
+hr{border:0;border-top:1px solid var(--line)}
+@media(max-width:520px){.grid,.filters{grid-template-columns:1fr}.full{grid-column:auto}.app{padding-left:12px;padding-right:12px}.actions button{flex:1}}
+</style>
+</head>
+<body>
+
+<div id="login" class="login">
+  <div class="card">
+    <div class="logo">BUZZ <span>FIELD</span></div>
+    <div class="muted">Field meeting management</div>
+    <div style="height:18px"></div>
+    <label>Passcode</label>
+    <input id="passcode" type="password" inputmode="numeric" placeholder="Enter your passcode" onkeydown="if(event.key==='Enter') login()">
+    <div id="loginError" class="error" style="margin-top:8px"></div>
+    <button class="primary" style="width:100%;margin-top:14px" onclick="login()">Open App</button>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <div class="top">
+    <div class="brand">BUZZ <span>FIELD</span><div class="muted" id="userLabel"></div></div>
+    <button class="secondary" onclick="logout()">Lock</button>
+  </div>
+
+  <section id="home">
+    <div class="card">
+      <div class="muted">FIELD MEETINGS</div>
+      <h1>Keep every meeting in one place.</h1>
+      <button class="primary" onclick="showForm()">+ New Meeting</button>
+    </div>
+
+    <div class="card">
+      <div class="filters">
+        <input id="search" placeholder="Search business or person" oninput="renderMeetings()">
+        <select id="personFilter" onchange="renderMeetings()">
+          <option value="">All meetings</option>
+          <option value="Me">Me</option>
+          <option value="Noman">Noman</option>
+          <option value="Both">Both</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="status" class="muted"></div>
+    <div id="meetings"></div>
+  </section>
+
+  <section id="form" class="hidden">
+    <div class="card">
+      <div class="muted">NEW FIELD MEETING</div>
+      <h1>Meeting details</h1>
+
+      <form onsubmit="saveMeeting(event)">
+        <div class="grid">
+          <div class="full"><label>Business Name *</label><input id="business" required></div>
+          <div><label>Person Met</label><input id="person"></div>
+          <div><label>Meeting Date</label><input id="date" type="date"></div>
+          <div><label>Contact</label><input id="contact" type="tel"></div>
+          <div><label>Other Contact</label><input id="otherContact" type="tel"></div>
+
+          <div class="full">
+            <label>Met By</label>
+            <select id="metBy">
+              <option>Me</option>
+              <option>Noman</option>
+              <option>Both</option>
+            </select>
+          </div>
+
+          <div class="full"><label>What Was Discussed</label><textarea id="discussion"></textarea></div>
+          <div class="full"><label>Key Requirement / Problem</label><textarea id="problem"></textarea></div>
+          <div class="full"><label>Next Step</label><textarea id="nextStep"></textarea></div>
+          <div><label>Follow-up Date</label><input id="followUp" type="date"></div>
+          <div><label>Additional Notes</label><input id="notes"></div>
+        </div>
+
+        <div id="saveMsg" style="margin-top:8px"></div>
+        <div class="actions">
+          <button type="button" class="secondary" onclick="showHome()">Cancel</button>
+          <button class="primary">Save Meeting</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section id="detail" class="hidden">
+    <div class="card">
+      <button class="secondary" onclick="showHome()">← Back</button>
+      <div id="detailContent" style="margin-top:14px"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const CONFIG = {
+  API_URL: "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE"
+};
+
+const users = {
+  ME: "1106",
+  NOMAN: "2722"
+};
+
+let session = null;
+let meetings = [];
+
+function login(){
+  const pass = document.getElementById("passcode").value.trim();
+  const error = document.getElementById("loginError");
+
+  if(pass === users.ME) session = {user:"Me", passcode:pass};
+  else if(pass === users.NOMAN) session = {user:"Noman", passcode:pass};
+  else {
+    error.textContent = "Incorrect passcode.";
+    return;
+  }
+
+  if(CONFIG.API_URL.includes("PASTE_")){
+    error.textContent = "App URL is not connected yet.";
+    session = null;
+    return;
+  }
+
+  localStorage.setItem("buzzSession", JSON.stringify(session));
+  openApp();
+}
+
+function logout(){
+  localStorage.removeItem("buzzSession");
+  session = null;
+  location.reload();
+}
+
+function openApp(){
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("userLabel").textContent = "Signed in as " + session.user;
+  showHome();
+  loadMeetings();
+}
+
+function showHome(){
+  ["form","detail"].forEach(x => document.getElementById(x).classList.add("hidden"));
+  document.getElementById("home").classList.remove("hidden");
+  renderMeetings();
+}
+
+function showForm(){
+  document.getElementById("home").classList.add("hidden");
+  document.getElementById("detail").classList.add("hidden");
+  document.getElementById("form").classList.remove("hidden");
+  document.getElementById("date").value = new Date().toISOString().slice(0,10);
+  document.getElementById("saveMsg").textContent = "";
+}
+
+function callApi(params, done){
+  const callback = "buzzCallback_" + Date.now() + "_" + Math.floor(Math.random()*10000);
+  const script = document.createElement("script");
+
+  window[callback] = function(data){
+    delete window[callback];
+    script.remove();
+    done(null, data);
+  };
+
+  script.onerror = function(){
+    delete window[callback];
+    script.remove();
+    done(new Error("Could not connect to Google Apps Script."));
+  };
+
+  params.callback = callback;
+  const query = Object.keys(params)
+    .map(k => encodeURIComponent(k) + "=" + encodeURIComponent(params[k] ?? ""))
+    .join("&");
+
+  script.src = CONFIG.API_URL + (CONFIG.API_URL.includes("?") ? "&" : "?") + query;
+  document.body.appendChild(script);
+}
+
+function loadMeetings(){
+  document.getElementById("status").textContent = "Syncing meetings...";
+
+  callApi({action:"list", passcode:session.passcode}, function(err, data){
+    if(err || !data || !data.ok){
+      document.getElementById("status").innerHTML = '<span class="error">Could not sync. Check your Apps Script deployment.</span>';
+      return;
+    }
+
+    meetings = data.meetings || [];
+    document.getElementById("status").textContent =
+      meetings.length + " meeting" + (meetings.length === 1 ? "" : "s");
+
+    renderMeetings();
+  });
+}
+
+function saveMeeting(e){
+  e.preventDefault();
+
+  const msg = document.getElementById("saveMsg");
+  msg.textContent = "Saving...";
+
+  const params = {
+    action:"create",
+    passcode:session.passcode,
+    businessName:document.getElementById("business").value.trim(),
+    personMet:document.getElementById("person").value.trim(),
+    contact:document.getElementById("contact").value.trim(),
+    otherContact:document.getElementById("otherContact").value.trim(),
+    metBy:document.getElementById("metBy").value,
+    meetingDate:document.getElementById("date").value,
+    discussion:document.getElementById("discussion").value,
+    problem:document.getElementById("problem").value,
+    nextStep:document.getElementById("nextStep").value,
+    followUp:document.getElementById("followUp").value,
+    notes:document.getElementById("notes").value
+  };
+
+  callApi(params, function(err, data){
+    if(err || !data || !data.ok){
+      msg.innerHTML = '<span class="error">' + esc(data?.error || err?.message || "Could not save meeting.") + '</span>';
+      return;
+    }
+
+    meetings.unshift(data.meeting);
+    msg.innerHTML = '<span class="success">Saved and synced.</span>';
+
+    setTimeout(function(){
+      document.querySelector("form").reset();
+      showHome();
+    }, 450);
+  });
+}
+
+function renderMeetings(){
+  const q = (document.getElementById("search")?.value || "").toLowerCase();
+  const f = document.getElementById("personFilter")?.value || "";
+
+  const list = meetings.filter(m =>
+    (!q || (String(m.businessName) + " " + String(m.personMet)).toLowerCase().includes(q)) &&
+    (!f || m.metBy === f)
+  );
+
+  const el = document.getElementById("meetings");
+  el.innerHTML = "";
+
+  if(!list.length){
+    el.innerHTML = '<div class="card empty">No meetings found.</div>';
+    return;
+  }
+
+  list.forEach(m => {
+    const d = document.createElement("div");
+    d.className = "card meeting";
+    d.onclick = () => showDetail(m);
+
+    d.innerHTML =
+      '<h3>' + esc(m.businessName || "Unnamed Business") + '</h3>' +
+      '<div class="muted">' + esc(m.personMet || "No person recorded") +
+      ' · ' + esc(m.meetingDate || "No date") + '</div>' +
+      '<div style="margin-top:10px"><span class="pill">' + esc(m.metBy || "") +
+      '</span>' + (m.nextStep ? '<span class="pill">Next step set</span>' : "") + '</div>';
+
+    el.appendChild(d);
+  });
+}
+
+function showDetail(m){
+  document.getElementById("home").classList.add("hidden");
+  document.getElementById("form").classList.add("hidden");
+  document.getElementById("detail").classList.remove("hidden");
+
+  document.getElementById("detailContent").innerHTML =
+    "<h1>" + esc(m.businessName) + "</h1>" +
+    '<div class="muted">' + esc(m.meetingDate || "") + " · Met by " + esc(m.metBy || "") + "</div>" +
+    "<hr>" +
+    field("Person Met",m.personMet) +
+    field("Contact",m.contact) +
+    field("Other Contact",m.otherContact) +
+    field("What Was Discussed",m.discussion) +
+    field("Key Requirement / Problem",m.problem) +
+    field("Next Step",m.nextStep) +
+    field("Follow-up Date",m.followUp) +
+    field("Additional Notes",m.notes) +
+    field("Entered By",m.createdBy);
+}
+
+function field(k,v){
+  if(!v) return "";
+  return '<div style="margin:14px 0"><div class="muted">' + k +
+    '</div><div style="white-space:pre-wrap;margin-top:4px">' + esc(v) + "</div></div>";
+}
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+const saved = localStorage.getItem("buzzSession");
+if(saved){
+  try{
+    session = JSON.parse(saved);
+    if(session?.passcode) openApp();
+  }catch(e){}
+}
+</script>
+</body>
+</html>
